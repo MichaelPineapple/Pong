@@ -36,7 +36,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="OpenTK">
-      <HintPath>..\..\..\ProjectPeril (Stage 2)\OpenTK.dll</HintPath>
+      <HintPath>.\OpenTK.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,9 +47,8 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="TysonTK, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\assets\TysonTK.dll</HintPath>
+    <Reference Include="TysonTK">
+      <HintPath>.\TysonTK.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
