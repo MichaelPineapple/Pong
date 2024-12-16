@@ -1,1 +1,1 @@
-﻿Console.WriteLine("Hello, Pong!");
+﻿new Pong.Pong().Run();
