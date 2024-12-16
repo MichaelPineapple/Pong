@@ -9,11 +9,11 @@ namespace Pong;
 public class Pong : GameWindow
 {
     private const float SPEED_PADDLE = 0.001f;
-    private const float SPEED_BALL = 0.0002f;
     private const float PADDLE_HEIGHT = 0.1f;
     private const float PADDLE_WIDTH = 0.01f;
+    private const float PADDLE_X = 0.75f;
+    private const float SPEED_BALL = 0.0002f;
     private const float BALL_SIZE = 0.01f;
-    
     private float[] verticiesPaddle = new []
     {
         -PADDLE_WIDTH,  PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
@@ -40,8 +40,8 @@ public class Pong : GameWindow
     private Mesh meshPaddle;
     private Mesh meshBall;
     
-    private Vector3 leftPos = new Vector3(-0.5f, 0.0f, 0.0f);
-    private Vector3 rightPos = new Vector3(0.5f, 0.0f, 0.0f);
+    private Vector3 leftPos = new Vector3(-PADDLE_X, 0.0f, 0.0f);
+    private Vector3 rightPos = new Vector3(PADDLE_X, 0.0f, 0.0f);
     private Vector3 ballPos = Vector3.Zero;
     private Vector3 ballVel = new Vector3(SPEED_BALL, SPEED_BALL*1.1f, 0.0f);
 
