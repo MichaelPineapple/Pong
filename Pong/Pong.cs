@@ -14,6 +14,7 @@ public class Pong : GameWindow
     private const float PADDLE_X = 0.75f;
     private const float SPEED_BALL = 0.0002f;
     private const float BALL_SIZE = 0.01f;
+    
     private float[] verticiesPaddle = new []
     {
         -PADDLE_WIDTH,  PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
