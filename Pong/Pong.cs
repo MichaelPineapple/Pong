@@ -8,46 +8,50 @@ namespace Pong;
 
 public class Pong : GameWindow
 {
-    private const float SPEED_PADDLE = 0.001f;
+    private const float PADDLE_SPEED = 0.001f;
     private const float PADDLE_HEIGHT = 0.1f;
     private const float PADDLE_WIDTH = 0.01f;
     private const float PADDLE_X = 0.75f;
-    private const float SPEED_BALL = 0.0002f;
     private const float BALL_SIZE = 0.01f;
     
-    private float[] verticiesPaddle = new []
+    private readonly float[] verticiesPadd = new []
     {
-        -PADDLE_WIDTH,  PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-         PADDLE_WIDTH, -PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 
-        -PADDLE_WIDTH, -PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        -PADDLE_WIDTH,  PADDLE_HEIGHT,
+         PADDLE_WIDTH, -PADDLE_HEIGHT,
+        -PADDLE_WIDTH, -PADDLE_HEIGHT,
         
-        -PADDLE_WIDTH,  PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-         PADDLE_WIDTH,  PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-         PADDLE_WIDTH, -PADDLE_HEIGHT, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        -PADDLE_WIDTH,  PADDLE_HEIGHT,
+         PADDLE_WIDTH,  PADDLE_HEIGHT,
+         PADDLE_WIDTH, -PADDLE_HEIGHT,
     };
     
-    private float[] verticiesBall = new []
+    private readonly float[] verticiesBall = new []
     {
-        -BALL_SIZE,  BALL_SIZE, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-         BALL_SIZE, -BALL_SIZE, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 
-        -BALL_SIZE, -BALL_SIZE, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        -BALL_SIZE,  BALL_SIZE,
+         BALL_SIZE, -BALL_SIZE,
+        -BALL_SIZE, -BALL_SIZE,
         
-        -BALL_SIZE,  BALL_SIZE, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-         BALL_SIZE,  BALL_SIZE, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-         BALL_SIZE, -BALL_SIZE, 0.0f,    0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+        -BALL_SIZE,  BALL_SIZE,
+         BALL_SIZE,  BALL_SIZE,
+         BALL_SIZE, -BALL_SIZE,
     };
-    
-    private Shader shaderDefault;
-    private Mesh meshPaddle;
-    private Mesh meshBall;
-    
-    private Vector3 leftPos = new Vector3(-PADDLE_X, 0.0f, 0.0f);
-    private Vector3 rightPos = new Vector3(PADDLE_X, 0.0f, 0.0f);
-    private Vector3 ballPos = Vector3.Zero;
-    private Vector3 ballVel = new Vector3(SPEED_BALL, SPEED_BALL*1.1f, 0.0f);
 
-    private int leftScore = 0;
-    private int rightScore = 0;
+    private int shaderDefault;
+
+    private int vaoBall;
+    private int vaoPadd;
+    
+    private int ulColor;
+    private int ulModel;
+    private int ulProjj;
+    
+    private Vector3 posLeft = new Vector3(-PADDLE_X, 0.0f, 0.0f);
+    private Vector3 posRigt = new Vector3(PADDLE_X, 0.0f, 0.0f);
+    private Vector3 posBall = Vector3.Zero;
+    private Vector3 velBall = new Vector3(0.0003f, 0.0002f, 0.0f);
+
+    private int scoreLeft;
+    private int scoreRigt;
 
     public Pong() : base(GameWindowSettings.Default, NativeWindowSettings.Default)
     {
@@ -60,12 +64,78 @@ public class Pong : GameWindow
         base.OnLoad();
         GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         
-        string pathShaders = "../../../shaders/";
-        shaderDefault = new Shader(pathShaders + "Default.vert", pathShaders + "Default.frag");
-        shaderDefault.Use();
+        CreateShader();
+        vaoBall = CreateVAO(verticiesBall);
+        vaoPadd = CreateVAO(verticiesPadd);
+        
+        ulColor = GL.GetUniformLocation(shaderDefault, "color");
+        ulModel = GL.GetUniformLocation(shaderDefault, "model");
+        ulProjj = GL.GetUniformLocation(shaderDefault, "projj");
+    }
 
-        meshPaddle = new Mesh(verticiesPaddle, shaderDefault);
-        meshBall = new Mesh(verticiesBall, shaderDefault);
+    private void CreateShader()
+    {
+        const string shaderSourceVertex = 
+            "#version 330 core \n" +
+            "in vec3 vert;" +
+            "uniform mat4 model;" +
+            "uniform mat4 projj;" +
+            "void main(){" +
+            "gl_Position = vec4(vert, 1.0) * model * projj;" +
+            "}";
+        
+        const string shaderSourceFragmt = 
+            "#version 330 core \n" +
+            "out vec4 FragColor;" +
+            "uniform vec3 color;" +
+            "void main(){" +
+            "FragColor = vec4(color, 1.0f);" +
+            "}";
+        
+        int vertexShader = GL.CreateShader(ShaderType.VertexShader);
+        int fragmtShader = GL.CreateShader(ShaderType.FragmentShader);
+        
+        GL.ShaderSource(vertexShader, shaderSourceVertex);
+        GL.ShaderSource(fragmtShader, shaderSourceFragmt);
+        
+        GL.CompileShader(vertexShader);
+        GL.CompileShader(fragmtShader);
+        
+        GL.GetShader(vertexShader, ShaderParameter.CompileStatus, out int succ1);
+        GL.GetShader(fragmtShader, ShaderParameter.CompileStatus, out int succ2);
+        
+        if (succ1 == 0) Console.WriteLine(GL.GetShaderInfoLog(vertexShader));
+        if (succ2 == 0) Console.WriteLine(GL.GetShaderInfoLog(fragmtShader));
+        
+        shaderDefault = GL.CreateProgram();
+
+        GL.AttachShader(shaderDefault, vertexShader);
+        GL.AttachShader(shaderDefault, fragmtShader);
+        
+        GL.LinkProgram(shaderDefault);
+        GL.GetProgram(shaderDefault, GetProgramParameterName.LinkStatus, out int succ3);
+        
+        if (succ3 == 0) Console.WriteLine(GL.GetProgramInfoLog(shaderDefault));
+        
+        GL.DetachShader(shaderDefault, vertexShader);
+        GL.DetachShader(shaderDefault, fragmtShader);
+        
+        GL.DeleteShader(fragmtShader);
+        GL.DeleteShader(vertexShader);
+    }
+    
+    private int CreateVAO(float[] _verticies)
+    {
+        const int typeSize = sizeof(float); 
+        int VAO = GL.GenVertexArray();
+        GL.BindVertexArray(VAO);
+        int VBO = GL.GenBuffer();
+        GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+        GL.BufferData(BufferTarget.ArrayBuffer, _verticies.Length * typeSize, _verticies, BufferUsageHint.DynamicDraw);
+        int aVert = GL.GetAttribLocation(shaderDefault, "vert");
+        GL.VertexAttribPointer(aVert, 2, VertexAttribPointerType.Float, false, 2 * typeSize, 0);
+        GL.EnableVertexAttribArray(aVert);
+        return VAO;
     }
     
     protected override void OnUpdateFrame(FrameEventArgs e)
@@ -74,31 +144,31 @@ public class Pong : GameWindow
         
         if (KeyboardState.IsKeyDown(Keys.Escape)) Close();
 
-        if (KeyboardState.IsKeyDown(Keys.W) && leftPos.Y < 1.0f) leftPos.Y += SPEED_PADDLE;
-        if (KeyboardState.IsKeyDown(Keys.S) && leftPos.Y > -1.0f) leftPos.Y -= SPEED_PADDLE;
-        if (KeyboardState.IsKeyDown(Keys.Up) && rightPos.Y < 1.0f) rightPos.Y += SPEED_PADDLE;
-        if (KeyboardState.IsKeyDown(Keys.Down) && rightPos.Y > -1.0f) rightPos.Y -= SPEED_PADDLE;
+        if (KeyboardState.IsKeyDown(Keys.W) && posLeft.Y < 1.0f) posLeft.Y += PADDLE_SPEED;
+        if (KeyboardState.IsKeyDown(Keys.S) && posLeft.Y > -1.0f) posLeft.Y -= PADDLE_SPEED;
+        if (KeyboardState.IsKeyDown(Keys.Up) && posRigt.Y < 1.0f) posRigt.Y += PADDLE_SPEED;
+        if (KeyboardState.IsKeyDown(Keys.Down) && posRigt.Y > -1.0f) posRigt.Y -= PADDLE_SPEED;
 
         HandleCollision();
         HandleScoring();
         
-        ballPos += ballVel;
+        posBall += velBall;
     }
 
     private void HandleCollision()
     {
         float[] ball = new[]
         {
-            ballPos.Y + BALL_SIZE,
-            ballPos.Y - BALL_SIZE,
-            ballPos.X + BALL_SIZE,
-            ballPos.X - BALL_SIZE,
+            posBall.Y + BALL_SIZE,
+            posBall.Y - BALL_SIZE,
+            posBall.X + BALL_SIZE,
+            posBall.X - BALL_SIZE,
         };
         
-        if (ball[0] >= 1.0f || ball[1] <= -1.0f) ballVel.Y = -ballVel.Y;
+        if (ball[0] >= 1.0f || ball[1] <= -1.0f) velBall.Y = -velBall.Y;
         
-        HandlePaddleCollision(ball, leftPos);
-        HandlePaddleCollision(ball, rightPos);
+        HandlePaddleCollision(ball, posLeft);
+        HandlePaddleCollision(ball, posRigt);
     }
 
     private void HandlePaddleCollision(float[] _ball, Vector3 _pos)
@@ -107,39 +177,50 @@ public class Pong : GameWindow
         {
             if (_ball[2] >= (_pos.X - PADDLE_WIDTH) && _ball[3] <= (_pos.X + PADDLE_WIDTH))
             {
-                ballVel.X = -ballVel.X;
+                velBall.X = -velBall.X;
             }
         }
     }
 
     private void HandleScoring()
     {
-        if (ballPos.X < -1.0f)
+        if (posBall.X < -1.0f)
         {
-            rightScore += 1;
-            ballPos = Vector3.Zero;
+            scoreRigt += 1;
+            posBall = Vector3.Zero;
         }
         
-        if (ballPos.X > 1.0f)
+        if (posBall.X > 1.0f)
         {
-            leftScore += 1;
-            ballPos = Vector3.Zero;
+            scoreLeft += 1;
+            posBall = Vector3.Zero;
         }
     }
     
     protected override void OnRenderFrame(FrameEventArgs e)
     {
         base.OnRenderFrame(e);
-        GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-        shaderDefault.Use();
+        GL.Clear(ClearBufferMask.ColorBufferBit);
+        GL.UseProgram(shaderDefault);
         
-        int uHudColor = shaderDefault.getUniformLocation("color");
-        GL.Uniform3(uHudColor, Vector3.One);
-        meshPaddle.render(shaderDefault, leftPos, Vector3.Zero, 1.0f);
-        meshPaddle.render(shaderDefault, rightPos, Vector3.Zero, 1.0f);
-        meshBall.render(shaderDefault, ballPos, Vector3.Zero, 1.0f);
+        float aspectRatio = Size.X / (float)Size.Y;
+        Matrix4 proj = Matrix4.CreateOrthographicOffCenter(-aspectRatio, aspectRatio, -1.0f, 1.0f, 1.0f, -1.0f);
+        GL.UniformMatrix4(ulProjj, true, ref proj);
+        
+        RenderVAO(vaoBall, posBall);
+        RenderVAO(vaoPadd, posLeft);
+        RenderVAO(vaoPadd, posRigt);
         
         SwapBuffers();
+    }
+
+    private void RenderVAO(int _VAO, Vector3 _pos)
+    {
+        Matrix4 model = Matrix4.CreateTranslation(_pos);
+        GL.Uniform3(ulColor, Vector3.One);
+        GL.UniformMatrix4(ulModel, true, ref model);
+        GL.BindVertexArray(_VAO);
+        GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
     }
     
     protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
@@ -150,6 +231,13 @@ public class Pong : GameWindow
     
     protected override void OnUnload()
     {
-        shaderDefault.dispose();
+        GL.DeleteProgram(shaderDefault);
+        Console.WriteLine("Left:  "+scoreLeft);
+        Console.WriteLine("Right: "+scoreRigt);
+    }
+    
+    public static void Main(String[] args)
+    {
+        new Pong().Run();
     }
 }

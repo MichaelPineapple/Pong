@@ -1,1 +1,0 @@
-﻿new Pong.Pong().Run();
