@@ -283,30 +283,12 @@ int main()
 
     onLoad();
 
-    const double updateTime = 0.001f;
-    double prevUpdateTime = 0;
-
     std::thread testThread(threadFunc);
 
     while (!glfwWindowShouldClose(window))
     {
-        // double now = glfwGetTime();
-        // double deltaTime = now - prevUpdateTime;
-        // if (deltaTime >= updateTime)
-        // {
-        //
-        //     prevUpdateTime = now;
-        //     //printf("\n%f", deltaTime);
-        // }
-
-        //double t0 = glfwGetTime();
         onRender(window);
         glfwPollEvents();
-        //double t1 = glfwGetTime();
-        //double dt = t1 - t0;
-        //printf("\n%f", dt);
-
-        //onUpdate((float)dt);
     }
 
     close = true;
