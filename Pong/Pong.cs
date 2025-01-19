@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using OpenTK.Audio.OpenAL;
 
 namespace Pong;
 
@@ -43,6 +44,8 @@ public class Pong : GameWindow
     
     private int ulModel;
     private int ulProjj;
+
+    private int idSoundBall;
     
     private Vector3 posLeft = new Vector3(-PADDLE_X, 0.0f, 0.0f);
     private Vector3 posRigt = new Vector3(PADDLE_X, 0.0f, 0.0f);
@@ -69,6 +72,11 @@ public class Pong : GameWindow
         
         ulModel = GL.GetUniformLocation(shaderDefault, "model");
         ulProjj = GL.GetUniformLocation(shaderDefault, "projj");
+        
+        InitializeAudio();
+
+        var soundData = CreateBallSound();
+        idSoundBall = LoadSound(soundData.Item1, soundData.Item2);
     }
 
     private void CreateShader()
@@ -135,6 +143,36 @@ public class Pong : GameWindow
         return VAO;
     }
     
+    private void InitializeAudio()
+    {
+        ALDevice device = ALC.OpenDevice(null);
+        ALContext context = ALC.CreateContext(device, (int[])null);
+        ALC.MakeContextCurrent(context);
+    }
+    
+    private int LoadSound(short[] _data, int _freq)
+    {
+        int buffer = AL.GenBuffer();
+        int source = AL.GenSource();
+        AL.BufferData(buffer, ALFormat.Mono16, ref _data[0], _data.Length * sizeof(short), _freq);
+        AL.Source(source, ALSourcei.Buffer, buffer);
+        AL.Source(source, ALSourcef.Gain, 1.0f);
+        AL.DeleteBuffer(buffer);
+        return source;
+    }
+
+    private (short[], int) CreateBallSound()
+    {
+        int freq0 = 220;
+        int sampleRate = 44100;
+        short[] data = new short[4410];
+        for (int i = 0; i < data.Length; i++)
+        {
+            data[i] = (short)(MathF.Sin((i * freq0 * MathF.PI * 2) / sampleRate) * short.MaxValue);
+        }
+        return (data, 44100);
+    }
+    
     protected override void OnUpdateFrame(FrameEventArgs e)
     {
         base.OnUpdateFrame(e);    
@@ -161,8 +199,12 @@ public class Pong : GameWindow
             posBall.X + BALL_SIZE,
             posBall.X - BALL_SIZE,
         };
-        
-        if (ball[0] >= 1.0f || ball[1] <= -1.0f) velBall.Y = -velBall.Y;
+
+        if (ball[0] >= 1.0f || ball[1] <= -1.0f)
+        {
+            velBall.Y = -velBall.Y;
+            AL.SourcePlay(idSoundBall);
+        }
         
         HandlePaddleCollision(ball, posLeft);
         HandlePaddleCollision(ball, posRigt);
@@ -175,6 +217,7 @@ public class Pong : GameWindow
             if (_ball[2] >= (_pos.X - PADDLE_WIDTH) && _ball[3] <= (_pos.X + PADDLE_WIDTH))
             {
                 velBall.X = -velBall.X;
+                AL.SourcePlay(idSoundBall);
             }
         }
     }
@@ -227,9 +270,20 @@ public class Pong : GameWindow
     
     protected override void OnUnload()
     {
-        GL.DeleteProgram(shaderDefault);
         Console.WriteLine("Left:  "+scoreLeft);
         Console.WriteLine("Right: "+scoreRigt);
+        GL.DeleteProgram(shaderDefault);
+        AL.DeleteSource(idSoundBall);
+        ShutdownAudio();
+    }
+    
+    private void ShutdownAudio()
+    {
+        ALContext context = ALC.GetCurrentContext();
+        ALDevice device = ALC.GetContextsDevice(context);
+        ALC.MakeContextCurrent(ALContext.Null);
+        ALC.DestroyContext(context);
+        ALC.CloseDevice(device);
     }
     
     public static void Main(String[] args)
