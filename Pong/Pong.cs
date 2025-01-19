@@ -41,7 +41,6 @@ public class Pong : GameWindow
     private int vaoBall;
     private int vaoPadd;
     
-    private int ulColor;
     private int ulModel;
     private int ulProjj;
     
@@ -68,7 +67,6 @@ public class Pong : GameWindow
         vaoBall = CreateVAO(verticiesBall);
         vaoPadd = CreateVAO(verticiesPadd);
         
-        ulColor = GL.GetUniformLocation(shaderDefault, "color");
         ulModel = GL.GetUniformLocation(shaderDefault, "model");
         ulProjj = GL.GetUniformLocation(shaderDefault, "projj");
     }
@@ -87,9 +85,8 @@ public class Pong : GameWindow
         const string shaderSourceFragmt = 
             "#version 330 core \n" +
             "out vec4 FragColor;" +
-            "uniform vec3 color;" +
             "void main(){" +
-            "FragColor = vec4(color, 1.0f);" +
+            "FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);" +
             "}";
         
         int vertexShader = GL.CreateShader(ShaderType.VertexShader);
@@ -217,7 +214,6 @@ public class Pong : GameWindow
     private void RenderVAO(int _VAO, Vector3 _pos)
     {
         Matrix4 model = Matrix4.CreateTranslation(_pos);
-        GL.Uniform3(ulColor, Vector3.One);
         GL.UniformMatrix4(ulModel, true, ref model);
         GL.BindVertexArray(_VAO);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
