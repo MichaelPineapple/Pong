@@ -14,7 +14,7 @@ public class Pong : GameWindow
     private const float PADDLE_X = 0.75f;
     private const float BALL_SIZE = 0.01f;
     
-    private readonly float[] verticiesPadd = new []
+    private readonly float[] verticesPadd = new []
     {
         -PADDLE_WIDTH,  PADDLE_HEIGHT,
          PADDLE_WIDTH, -PADDLE_HEIGHT,
@@ -25,7 +25,7 @@ public class Pong : GameWindow
          PADDLE_WIDTH, -PADDLE_HEIGHT,
     };
     
-    private readonly float[] verticiesBall = new []
+    private readonly float[] verticesBall = new []
     {
         -BALL_SIZE,  BALL_SIZE,
          BALL_SIZE, -BALL_SIZE,
@@ -64,8 +64,8 @@ public class Pong : GameWindow
         GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         
         CreateShader();
-        vaoBall = CreateVAO(verticiesBall);
-        vaoPadd = CreateVAO(verticiesPadd);
+        vaoBall = CreateVAO(verticesBall);
+        vaoPadd = CreateVAO(verticesPadd);
         
         ulModel = GL.GetUniformLocation(shaderDefault, "model");
         ulProjj = GL.GetUniformLocation(shaderDefault, "projj");
