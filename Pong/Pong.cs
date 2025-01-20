@@ -11,7 +11,7 @@ namespace Pong;
 
 public class Pong : GameWindow
 {
-    private const float PADDLE_SPEED = 0.001f;
+    private const float PADDLE_SPEED = 0.02f;
     private const float PADDLE_HEIGHT = 0.1f;
     private const float PADDLE_WIDTH = 0.01f;
     private const float PADDLE_X = 0.75f;
@@ -52,7 +52,7 @@ public class Pong : GameWindow
     private Vector3 posLeft = new Vector3(-PADDLE_X, 0.0f, 0.0f);
     private Vector3 posRigt = new Vector3(PADDLE_X, 0.0f, 0.0f);
     private Vector3 posBall = Vector3.Zero;
-    private Vector3 velBall = new Vector3(0.0003f, 0.0002f, 0.0f);
+    private Vector3 velBall = new Vector3(0.006f, 0.004f, 0.0f);
 
     private int scoreLeft;
     private int scoreRigt;
@@ -66,7 +66,7 @@ public class Pong : GameWindow
     {
         ClientSize = (1000, 1000);
         Title = "Pong";
-        UpdateFrequency = 60.0;
+        UpdateFrequency = 120.0;
         sock = _sock;
         stream = _stream;
         host = _host;
