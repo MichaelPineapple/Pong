@@ -64,7 +64,7 @@ public class Pong : GameWindow
     
     public Pong(Socket? _sock, Stream? _stream, bool _host, bool _net) : base(GameWindowSettings.Default, NativeWindowSettings.Default)
     {
-        ClientSize = (1000, 1000);
+        ClientSize = (500, 500);
         Title = "Pong";
         UpdateFrequency = 120.0;
         sock = _sock;
@@ -159,8 +159,6 @@ public class Pong : GameWindow
     {
         base.OnUpdateFrame(e);    
         
-        if (KeyboardState.IsKeyDown(Keys.Escape)) Close();
-
         InputData inputDataLeft = new InputData();
         InputData inputDataRigt = new InputData();
         
@@ -168,6 +166,7 @@ public class Pong : GameWindow
         inputDataLeft.dwn = KeyboardState.IsKeyDown(Keys.S);
         inputDataRigt.upp = KeyboardState.IsKeyDown(Keys.Up);
         inputDataRigt.dwn = KeyboardState.IsKeyDown(Keys.Down);
+        inputDataLeft.end = inputDataRigt.end = KeyboardState.IsKeyDown(Keys.Escape);
 
         if (net)
         {
@@ -179,6 +178,8 @@ public class Pong : GameWindow
         if (inputDataLeft.dwn && posLeft.Y > -1.0f) posLeft.Y -= PADDLE_SPEED;
         if (inputDataRigt.upp && posRigt.Y <  1.0f) posRigt.Y += PADDLE_SPEED;
         if (inputDataRigt.dwn && posRigt.Y > -1.0f) posRigt.Y -= PADDLE_SPEED;
+        
+        if (inputDataLeft.end || inputDataRigt.end) Close();
         
         HandleCollision();
         HandleScoring();
@@ -266,14 +267,13 @@ public class Pong : GameWindow
     
     protected override void OnUnload()
     {
+        Console.WriteLine("GAME OVER");
         Console.WriteLine("Left:  "+scoreLeft);
         Console.WriteLine("Right: "+scoreRigt);
         GL.DeleteProgram(shaderDefault);
         AL.DeleteSource(idSoundBall);
         ShutdownAudio();
     }
-    
-    // *** AUDIO ***
     
     private int LoadSound(short[] _data, int _freq)
     {
@@ -335,14 +335,16 @@ public class Pong : GameWindow
     private byte Encode(InputData _data)
     {
         byte b = 0;
-        if (_data.upp) b += 2;
-        if (_data.dwn) b += 1;
+        if (_data.end) b |= 4;
+        if (_data.upp) b |= 2;
+        if (_data.dwn) b |= 1;
         return b;
     }
 
     private InputData Decode(byte _data)
     {
         InputData output = new InputData();
+        output.end = (_data & 4) != 0;
         output.upp = (_data & 2) != 0;
         output.dwn = (_data & 1) != 0;
         return output;
@@ -366,11 +368,11 @@ public class Pong : GameWindow
     
     private struct InputData
     {
-        public bool upp, dwn;
+        public bool upp, dwn, end;
 
         public InputData()
         {
-            upp = dwn = false;
+            upp = dwn = end = false;
         }
     }
     
@@ -381,7 +383,7 @@ public class Pong : GameWindow
         {
             Console.WriteLine("IP:");
             string? ip = Console.ReadLine();
-            if (ip == null) return;
+            if (ip == null || ip.Trim().Length == 0) ip = "127.0.0.1";
             LaunchNetworkMode(ip, 8001, Prompt("Host?"));
         }
         else new Pong(null, null, false, false).Run();
