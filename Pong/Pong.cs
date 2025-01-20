@@ -66,6 +66,7 @@ public class Pong : GameWindow
     {
         ClientSize = (1000, 1000);
         Title = "Pong";
+        UpdateFrequency = 60.0;
         sock = _sock;
         stream = _stream;
         host = _host;
@@ -376,7 +377,13 @@ public class Pong : GameWindow
     public static void Main(String[] args)
     {
         Console.WriteLine("Pong!");
-        if (Prompt("Use Network?")) LaunchNetworkMode("127.0.0.1", 8001, Prompt("Host?"));
+        if (Prompt("Use Network?"))
+        {
+            Console.WriteLine("IP:");
+            string? ip = Console.ReadLine();
+            if (ip == null) return;
+            LaunchNetworkMode(ip, 8001, Prompt("Host?"));
+        }
         else new Pong(null, null, false, false).Run();
     }
 
