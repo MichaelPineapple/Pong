@@ -11,4 +11,10 @@
       <PackageReference Include="OpenTK" Version="4.9.3" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Reference Include="MclTech_1">
+        <HintPath>..\dep\MclTech_1.dll</HintPath>
+      </Reference>
+    </ItemGroup>
+
 </Project>

@@ -1,372 +1,135 @@
-using OpenTK.Graphics.OpenGL4;
+using MclTech_1;
+using MclTech_1.Objects;
 using OpenTK.Mathematics;
-using OpenTK.Windowing.Common;
-using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
-using OpenTK.Audio.OpenAL;
-using System.Net;
-using System.Net.Sockets;
 
 namespace Pong;
 
-public class Pong : GameWindow
+public class Pong
 {
-    private const float PADDLE_SPEED = 0.02f;
-    private const float PADDLE_HEIGHT = 0.1f;
-    private const float PADDLE_WIDTH = 0.01f;
-    private const float PADDLE_X = 0.75f;
-    private const float BALL_SIZE = 0.01f;
+    MclWindow mcl;
+
+    const float PADD_SPEED = 0.02f;
+    const float PADD_HEIGHT = 0.1f;
+    const float PADD_WIDTH = 0.01f;
+    const float PADD_X = 0.75f;
+    const float BALL_SIZE = 0.01f;
+
+    Vector3 velBall = new Vector3(0.006f, 0.004f, 0.0f);
+
+    int scoreLeft, scoreRigt;
+
+    MclObject paddLeft, paddRigt, ball;
     
-    private readonly float[] verticesPadd = new []
+    Pong()
     {
-        -PADDLE_WIDTH,  PADDLE_HEIGHT,
-         PADDLE_WIDTH, -PADDLE_HEIGHT,
-        -PADDLE_WIDTH, -PADDLE_HEIGHT,
-        
-        -PADDLE_WIDTH,  PADDLE_HEIGHT,
-         PADDLE_WIDTH,  PADDLE_HEIGHT,
-         PADDLE_WIDTH, -PADDLE_HEIGHT,
-    };
-    
-    private readonly float[] verticesBall = new []
-    {
-        -BALL_SIZE,  BALL_SIZE,
-         BALL_SIZE, -BALL_SIZE,
-        -BALL_SIZE, -BALL_SIZE,
-        
-        -BALL_SIZE,  BALL_SIZE,
-         BALL_SIZE,  BALL_SIZE,
-         BALL_SIZE, -BALL_SIZE,
-    };
-
-    private int shaderDefault;
-
-    private int vaoBall;
-    private int vaoPadd;
-    
-    private int ulModel;
-    private int ulProjj;
-
-    private int idSoundBall;
-    
-    private Vector3 posLeft = new Vector3(-PADDLE_X, 0.0f, 0.0f);
-    private Vector3 posRigt = new Vector3(PADDLE_X, 0.0f, 0.0f);
-    private Vector3 posBall = Vector3.Zero;
-    private Vector3 velBall = new Vector3(0.006f, 0.004f, 0.0f);
-
-    private int scoreLeft;
-    private int scoreRigt;
-
-    private bool host;
-    private bool net;
-    private Socket? sock;
-    private Stream? stream;
-    
-    public Pong(Socket? _sock, Stream? _stream, bool _host, bool _net) : base(GameWindowSettings.Default, NativeWindowSettings.Default)
-    {
-        ClientSize = (500, 500);
-        Title = "Pong";
-        UpdateFrequency = 120.0;
-        sock = _sock;
-        stream = _stream;
-        host = _host;
-        net = _net;
-    }
-    
-    protected override void OnLoad()
-    {
-        base.OnLoad();
-        GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        
-        CreateShader();
-        vaoBall = CreateVAO(verticesBall);
-        vaoPadd = CreateVAO(verticesPadd);
-        
-        ulModel = GL.GetUniformLocation(shaderDefault, "model");
-        ulProjj = GL.GetUniformLocation(shaderDefault, "projj");
-        
-        InitializeAudio();
-
-        var soundData = CreateBallSound();
-        idSoundBall = LoadSound(soundData.Item1, soundData.Item2);
+        mcl = new MclWindow();
+        mcl.onLoad = OnLoad;
+        mcl.onUpdate = OnUpdate;
+        mcl.Title = "Pong (MclTech_1)";
+        mcl.UpdateFrequency = 120;
+        mcl.Run();
+        Console.WriteLine("GAME OVER");
+        Console.WriteLine("Left:  "+scoreLeft);
+        Console.WriteLine("Right: "+scoreRigt);
     }
 
-    private void CreateShader()
+    void OnLoad()
     {
-        const string shaderSourceVertex = 
-            "#version 330 core \n" +
-            "in vec3 vert;" +
-            "uniform mat4 model;" +
-            "uniform mat4 projj;" +
-            "void main(){" +
-            "gl_Position = vec4(vert, 1.0) * model * projj;" +
-            "}";
+        MclModel modelPadd = mcl.LoadModel(MclTech.RECTANGE_VERTICIES(PADD_WIDTH, PADD_HEIGHT));
+        MclModel modelBall = mcl.LoadModel(MclTech.RECTANGE_VERTICIES(BALL_SIZE, BALL_SIZE));
         
-        const string shaderSourceFragmt = 
-            "#version 330 core \n" +
-            "out vec4 FragColor;" +
-            "void main(){" +
-            "FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);" +
-            "}";
+        paddLeft = new MclObject(modelPadd);
+        paddRigt = new MclObject(modelPadd);
+        ball = new MclObject(modelBall);
         
-        int vertexShader = GL.CreateShader(ShaderType.VertexShader);
-        int fragmtShader = GL.CreateShader(ShaderType.FragmentShader);
+        paddLeft.position.X = -PADD_X;
+        paddRigt.position.X =  PADD_X;
         
-        GL.ShaderSource(vertexShader, shaderSourceVertex);
-        GL.ShaderSource(fragmtShader, shaderSourceFragmt);
-        
-        GL.CompileShader(vertexShader);
-        GL.CompileShader(fragmtShader);
-        
-        GL.GetShader(vertexShader, ShaderParameter.CompileStatus, out int succ1);
-        GL.GetShader(fragmtShader, ShaderParameter.CompileStatus, out int succ2);
-        
-        if (succ1 == 0) Console.WriteLine(GL.GetShaderInfoLog(vertexShader));
-        if (succ2 == 0) Console.WriteLine(GL.GetShaderInfoLog(fragmtShader));
-        
-        shaderDefault = GL.CreateProgram();
+        mcl.AddObject(paddLeft);
+        mcl.AddObject(paddRigt);
+        mcl.AddObject(ball);
+    }
 
-        GL.AttachShader(shaderDefault, vertexShader);
-        GL.AttachShader(shaderDefault, fragmtShader);
-        
-        GL.LinkProgram(shaderDefault);
-        GL.GetProgram(shaderDefault, GetProgramParameterName.LinkStatus, out int succ3);
-        
-        if (succ3 == 0) Console.WriteLine(GL.GetProgramInfoLog(shaderDefault));
-        
-        GL.DetachShader(shaderDefault, vertexShader);
-        GL.DetachShader(shaderDefault, fragmtShader);
-        
-        GL.DeleteShader(fragmtShader);
-        GL.DeleteShader(vertexShader);
-    }
-    
-    private int CreateVAO(float[] _verticies)
+    void OnUpdate()
     {
-        const int typeSize = sizeof(float); 
-        int VAO = GL.GenVertexArray();
-        GL.BindVertexArray(VAO);
-        int VBO = GL.GenBuffer();
-        GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-        GL.BufferData(BufferTarget.ArrayBuffer, _verticies.Length * typeSize, _verticies, BufferUsageHint.DynamicDraw);
-        int aVert = GL.GetAttribLocation(shaderDefault, "vert");
-        GL.VertexAttribPointer(aVert, 2, VertexAttribPointerType.Float, false, 2 * typeSize, 0);
-        GL.EnableVertexAttribArray(aVert);
-        return VAO;
-    }
-    
-    protected override void OnUpdateFrame(FrameEventArgs e)
-    {
-        base.OnUpdateFrame(e);    
-        
         InputData inputDataLeft = new InputData();
         InputData inputDataRigt = new InputData();
-        
-        inputDataLeft.upp = KeyboardState.IsKeyDown(Keys.W);
-        inputDataLeft.dwn = KeyboardState.IsKeyDown(Keys.S);
-        inputDataRigt.upp = KeyboardState.IsKeyDown(Keys.Up);
-        inputDataRigt.dwn = KeyboardState.IsKeyDown(Keys.Down);
-        inputDataLeft.end = inputDataRigt.end = KeyboardState.IsKeyDown(Keys.Escape);
 
-        if (net)
-        {
-            if (host) inputDataRigt = NetRecieveInput(inputDataLeft);
-            else inputDataLeft = NetTransmitInput(inputDataRigt);
-        }
+        KeyboardState keyboard = mcl.KeyboardState;
+        inputDataLeft.upp = keyboard.IsKeyDown(Keys.W);
+        inputDataLeft.dwn = keyboard.IsKeyDown(Keys.S);
+        inputDataRigt.upp = keyboard.IsKeyDown(Keys.Up);
+        inputDataRigt.dwn = keyboard.IsKeyDown(Keys.Down);
+        inputDataLeft.end = inputDataRigt.end = keyboard.IsKeyDown(Keys.Escape);
 
-        if (inputDataLeft.upp && posLeft.Y <  1.0f) posLeft.Y += PADDLE_SPEED;
-        if (inputDataLeft.dwn && posLeft.Y > -1.0f) posLeft.Y -= PADDLE_SPEED;
-        if (inputDataRigt.upp && posRigt.Y <  1.0f) posRigt.Y += PADDLE_SPEED;
-        if (inputDataRigt.dwn && posRigt.Y > -1.0f) posRigt.Y -= PADDLE_SPEED;
+        // if (net)
+        // {
+        //     if (host) inputDataRigt = NetRecieveInput(inputDataLeft);
+        //     else inputDataLeft = NetTransmitInput(inputDataRigt);
+        // }
+
+        if (inputDataLeft.upp && paddLeft.position.Y <  1.0f) paddLeft.position.Y += PADD_SPEED;
+        if (inputDataLeft.dwn && paddLeft.position.Y > -1.0f) paddLeft.position.Y -= PADD_SPEED;
+        if (inputDataRigt.upp && paddRigt.position.Y <  1.0f) paddRigt.position.Y += PADD_SPEED;
+        if (inputDataRigt.dwn && paddRigt.position.Y > -1.0f) paddRigt.position.Y -= PADD_SPEED;
         
-        if (inputDataLeft.end || inputDataRigt.end) Close();
+        if (inputDataLeft.end || inputDataRigt.end) mcl.Close();
         
         HandleCollision();
         HandleScoring();
         
-        posBall += velBall;
+        ball.position += velBall;
     }
-
-    private void HandleCollision()
+    
+    void HandleCollision()
     {
-        float[] ball = new[]
+        float[] ballBounds = new[]
         {
-            posBall.Y + BALL_SIZE,
-            posBall.Y - BALL_SIZE,
-            posBall.X + BALL_SIZE,
-            posBall.X - BALL_SIZE,
+            ball.position.Y + BALL_SIZE,
+            ball.position.Y - BALL_SIZE,
+            ball.position.X + BALL_SIZE,
+            ball.position.X - BALL_SIZE,
         };
 
-        if (ball[0] >= 1.0f || ball[1] <= -1.0f)
+        if (ballBounds[0] >= 1.0f || ballBounds[1] <= -1.0f)
         {
             velBall.Y = -velBall.Y;
-            AL.SourcePlay(idSoundBall);
+            //AL.SourcePlay(idSoundBall);
         }
         
-        HandlePaddleCollision(ball, posLeft);
-        HandlePaddleCollision(ball, posRigt);
+        HandlePaddleCollision(ballBounds, paddLeft.position);
+        HandlePaddleCollision(ballBounds, paddRigt.position);
     }
 
-    private void HandlePaddleCollision(float[] _ball, Vector3 _pos)
+    void HandlePaddleCollision(float[] _ball, Vector3 _pos)
     {
-        if (_ball[0] >= (_pos.Y - PADDLE_HEIGHT) && _ball[1] <= (_pos.Y + PADDLE_HEIGHT))
+        if (_ball[0] >= (_pos.Y - PADD_HEIGHT) && _ball[1] <= (_pos.Y + PADD_HEIGHT))
         {
-            if (_ball[2] >= (_pos.X - PADDLE_WIDTH) && _ball[3] <= (_pos.X + PADDLE_WIDTH))
+            if (_ball[2] >= (_pos.X - PADD_WIDTH) && _ball[3] <= (_pos.X + PADD_WIDTH))
             {
                 velBall.X = -velBall.X;
-                AL.SourcePlay(idSoundBall);
+                //AL.SourcePlay(idSoundBall);
             }
         }
     }
 
-    private void HandleScoring()
+    void HandleScoring()
     {
-        if (posBall.X < -1.0f)
+        if (ball.position.X < -1.0f)
         {
             scoreRigt += 1;
-            posBall = Vector3.Zero;
+            ball.position = Vector3.Zero;
         }
         
-        if (posBall.X > 1.0f)
+        if (ball.position.X > 1.0f)
         {
             scoreLeft += 1;
-            posBall = Vector3.Zero;
+            ball.position = Vector3.Zero;
         }
     }
     
-    protected override void OnRenderFrame(FrameEventArgs e)
-    {
-        base.OnRenderFrame(e);
-        GL.Clear(ClearBufferMask.ColorBufferBit);
-        GL.UseProgram(shaderDefault);
-        
-        float aspectRatio = Size.X / (float)Size.Y;
-        Matrix4 proj = Matrix4.CreateOrthographicOffCenter(-aspectRatio, aspectRatio, -1.0f, 1.0f, 1.0f, -1.0f);
-        GL.UniformMatrix4(ulProjj, true, ref proj);
-        
-        RenderVAO(vaoBall, posBall);
-        RenderVAO(vaoPadd, posLeft);
-        RenderVAO(vaoPadd, posRigt);
-        
-        SwapBuffers();
-    }
-
-    private void RenderVAO(int _VAO, Vector3 _pos)
-    {
-        Matrix4 model = Matrix4.CreateTranslation(_pos);
-        GL.UniformMatrix4(ulModel, true, ref model);
-        GL.BindVertexArray(_VAO);
-        GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
-    }
-    
-    protected override void OnFramebufferResize(FramebufferResizeEventArgs e)
-    {
-        base.OnFramebufferResize(e);
-        GL.Viewport(0, 0, e.Width, e.Height);
-    }
-    
-    protected override void OnUnload()
-    {
-        Console.WriteLine("GAME OVER");
-        Console.WriteLine("Left:  "+scoreLeft);
-        Console.WriteLine("Right: "+scoreRigt);
-        GL.DeleteProgram(shaderDefault);
-        AL.DeleteSource(idSoundBall);
-        ShutdownAudio();
-    }
-    
-    private int LoadSound(short[] _data, int _freq)
-    {
-        int buffer = AL.GenBuffer();
-        int source = AL.GenSource();
-        AL.BufferData(buffer, ALFormat.Mono16, ref _data[0], _data.Length * sizeof(short), _freq);
-        AL.Source(source, ALSourcei.Buffer, buffer);
-        AL.Source(source, ALSourcef.Gain, 1.0f);
-        AL.DeleteBuffer(buffer);
-        return source;
-    }
-
-    private (short[], int) CreateBallSound()
-    {
-        int freq0 = 220;
-        int sampleRate = 44100;
-        short[] data = new short[4410];
-        for (int i = 0; i < data.Length; i++)
-        {
-            data[i] = (short)(MathF.Sin((i * freq0 * MathF.PI * 2) / sampleRate) * short.MaxValue);
-        }
-        return (data, 44100);
-    }
-    
-    private void InitializeAudio()
-    {
-        ALDevice device = ALC.OpenDevice(null);
-        ALContext context = ALC.CreateContext(device, (int[])null);
-        ALC.MakeContextCurrent(context);
-    }
-    
-    private void ShutdownAudio()
-    {
-        ALContext context = ALC.GetCurrentContext();
-        ALDevice device = ALC.GetContextsDevice(context);
-        ALC.MakeContextCurrent(ALContext.Null);
-        ALC.DestroyContext(context);
-        ALC.CloseDevice(device);
-    }
-    
-    private byte NetTransmit(byte _transData)
-    {
-        if (stream == null) return 255;
-        stream.Write(new [] { _transData }, 0, 1);
-        byte[] reply = new byte[1];
-        int k = stream.Read(reply, 0, 1);
-        return reply[0];
-    }
-
-    private byte NetRecieve(byte _replyData)
-    {
-        if (sock == null) return 255;
-        byte[] transData = new byte[1];
-        sock.Receive(transData);
-        sock.Send(new [] { _replyData });
-        return transData[0];
-    }
-    
-    private byte Encode(InputData _data)
-    {
-        byte b = 0;
-        if (_data.end) b |= 4;
-        if (_data.upp) b |= 2;
-        if (_data.dwn) b |= 1;
-        return b;
-    }
-
-    private InputData Decode(byte _data)
-    {
-        InputData output = new InputData();
-        output.end = (_data & 4) != 0;
-        output.upp = (_data & 2) != 0;
-        output.dwn = (_data & 1) != 0;
-        return output;
-    }
-    
-    private InputData NetTransmitInput(InputData _clientInput)
-    {
-        byte b = Encode(_clientInput);
-        byte serverReply = NetTransmit(b);
-        InputData serverInput = Decode(serverReply);
-        return serverInput;
-    }
-
-    private InputData NetRecieveInput(InputData _serverInput)
-    {
-        byte b = Encode(_serverInput);
-        byte clientTrans = NetRecieve(b);
-        InputData clientInput = Decode(clientTrans);
-        return clientInput;
-    }
-    
-    private struct InputData
+    struct InputData
     {
         public bool upp, dwn, end;
 
@@ -376,49 +139,8 @@ public class Pong : GameWindow
         }
     }
     
-    public static void Main(String[] args)
+    static void Main()
     {
-        Console.WriteLine("Pong!");
-        if (Prompt("Use Network?"))
-        {
-            Console.WriteLine("IP:");
-            string? ip = Console.ReadLine();
-            if (ip == null || ip.Trim().Length == 0) ip = "127.0.0.1";
-            LaunchNetworkMode(ip, 8001, Prompt("Host?"));
-        }
-        else new Pong(null, null, false, false).Run();
-    }
-
-    private static bool Prompt(string _txt)
-    {
-        Console.WriteLine(_txt);
-        return (Console.ReadLine() == "y");
-    }
-
-    private static void LaunchNetworkMode(string _ip, int _port, bool _host)
-    {
-        try
-        {
-            if (_host)
-            {
-                TcpListener server = new TcpListener(IPAddress.Parse(_ip), _port);
-                server.Start();
-                Console.WriteLine("Waiting for connection...");
-                Socket sock = server.AcceptSocket();
-                new Pong(sock, null, true, true).Run();
-                sock.Close();
-                server.Stop();
-            }
-            else
-            {
-                TcpClient client = new TcpClient();
-                Console.WriteLine("Connecting...");
-                client.Connect(_ip, _port);
-                Stream stream = client.GetStream();
-                new Pong(null, stream, false, true).Run();
-                client.Close();
-            }
-        }
-        catch (Exception e) { Console.WriteLine("Error: " + e.StackTrace); }
+        _ = new Pong();
     }
 }
