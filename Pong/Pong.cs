@@ -1,5 +1,4 @@
 using MclTech_1;
-using MclTech_1.Objects;
 using OpenTK.Mathematics;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 
@@ -39,16 +38,12 @@ public class Pong
         MclModel modelPadd = mcl.LoadModel(MclTech.RECTANGE_VERTICIES(PADD_WIDTH, PADD_HEIGHT));
         MclModel modelBall = mcl.LoadModel(MclTech.RECTANGE_VERTICIES(BALL_SIZE, BALL_SIZE));
         
-        paddLeft = new MclObject(modelPadd);
-        paddRigt = new MclObject(modelPadd);
-        ball = new MclObject(modelBall);
+        paddLeft = mcl.CreateObject(modelPadd);
+        paddRigt = mcl.CreateObject(modelPadd);
+        ball = mcl.CreateObject(modelBall);
         
         paddLeft.position.X = -PADD_X;
         paddRigt.position.X =  PADD_X;
-        
-        mcl.AddObject(paddLeft);
-        mcl.AddObject(paddRigt);
-        mcl.AddObject(ball);
     }
 
     void OnUpdate()
