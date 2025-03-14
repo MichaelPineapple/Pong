@@ -154,16 +154,18 @@ public class Pong
         Matrix4 proj = Matrix4.CreateOrthographicOffCenter(-aspectRatio, aspectRatio, -1.0f, 1.0f, 1.0f, -1.0f);
         shaderDefault.SetProjj(proj);
         
-        RenderVAO(vaoBall, posBall);
-        RenderVAO(vaoPadd, posLeft);
-        RenderVAO(vaoPadd, posRigt);
+        GL.BindVertexArray(vaoBall);
+        RenderVAO(posBall);
+        
+        GL.BindVertexArray(vaoPadd);
+        RenderVAO(posLeft);
+        RenderVAO(posRigt);
     }
 
-    private void RenderVAO(int _vao, Vector3 _pos)
+    private void RenderVAO(Vector3 _pos)
     {
         Matrix4 model = Matrix4.CreateTranslation(_pos);
         shaderDefault.SetModel(model);
-        GL.BindVertexArray(_vao);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
     }
     
