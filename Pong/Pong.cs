@@ -61,6 +61,8 @@ public class Pong : GameWindow
     private bool net;
     private Socket? sock;
     private Stream? stream;
+
+    private float aspectRatio;
     
     public Pong(Socket? _sock, Stream? _stream, bool _host, bool _net) : base(GameWindowSettings.Default, NativeWindowSettings.Default)
     {
@@ -79,6 +81,8 @@ public class Pong : GameWindow
         GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         
         CreateShader();
+        GL.UseProgram(shaderDefault);
+        
         vaoBall = CreateVAO(verticesBall);
         vaoPadd = CreateVAO(verticesPadd);
         
@@ -238,9 +242,7 @@ public class Pong : GameWindow
     {
         base.OnRenderFrame(e);
         GL.Clear(ClearBufferMask.ColorBufferBit);
-        GL.UseProgram(shaderDefault);
         
-        float aspectRatio = Size.X / (float)Size.Y;
         Matrix4 proj = Matrix4.CreateOrthographicOffCenter(-aspectRatio, aspectRatio, -1.0f, 1.0f, 1.0f, -1.0f);
         GL.UniformMatrix4(ulProjj, true, ref proj);
         
@@ -263,6 +265,7 @@ public class Pong : GameWindow
     {
         base.OnFramebufferResize(e);
         GL.Viewport(0, 0, e.Width, e.Height);
+        aspectRatio = Size.X / (float)Size.Y;
     }
     
     protected override void OnUnload()
