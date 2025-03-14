@@ -12,8 +12,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Reference Include="MclTech_1">
-        <HintPath>..\dep\MclTech_1.dll</HintPath>
+      <Reference Include="MclTK">
+        <HintPath>..\..\Tetris\dep\MclTK.dll</HintPath>
       </Reference>
     </ItemGroup>
 
