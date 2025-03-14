@@ -78,7 +78,6 @@ public class Pong : GameWindow
     protected override void OnLoad()
     {
         base.OnLoad();
-        GL.ClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         
         CreateShader();
         GL.UseProgram(shaderDefault);
@@ -246,18 +245,20 @@ public class Pong : GameWindow
         Matrix4 proj = Matrix4.CreateOrthographicOffCenter(-aspectRatio, aspectRatio, -1.0f, 1.0f, 1.0f, -1.0f);
         GL.UniformMatrix4(ulProjj, true, ref proj);
         
-        RenderVAO(vaoBall, posBall);
-        RenderVAO(vaoPadd, posLeft);
-        RenderVAO(vaoPadd, posRigt);
+        GL.BindVertexArray(vaoBall);
+        RenderVAO(posBall);
+        
+        GL.BindVertexArray(vaoPadd);
+        RenderVAO(posLeft);
+        RenderVAO(posRigt);
         
         SwapBuffers();
     }
 
-    private void RenderVAO(int _VAO, Vector3 _pos)
+    private void RenderVAO(Vector3 _pos)
     {
         Matrix4 model = Matrix4.CreateTranslation(_pos);
         GL.UniformMatrix4(ulModel, true, ref model);
-        GL.BindVertexArray(_VAO);
         GL.DrawArrays(PrimitiveType.Triangles, 0, 6);
     }
     
